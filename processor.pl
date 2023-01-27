@@ -55,6 +55,13 @@ sub get_span {
     DateTime::Span->from_datetimes(start => $s, end => $e);
 }
 
+# Format zoom url
+sub zoom_url {
+    my ($text, $href) = @_;
+    $text =~ s/(.{4}(?!.{3}$)|.{3})(?=(.{3,4})+$)/$1 /gs;
+    "<b>Zoom:</b> <a href=\"$href\">$text</a>";
+}
+
 # Format an event
 sub format_event {
     my $e = shift // $_;
@@ -62,7 +69,11 @@ sub format_event {
 
     my $location = "";
     $location .= "<b>Location:</b> $e->{location} " if length $e->{location};
-    $location .= $e->{url} if length $e->{url};
+    if (length($e->{url})) {
+        my $url = $e->{url};
+        $url = zoom_url($1, $e->{url}) if $url =~ m/\/(\d{7,})(?:\?|$)/s;
+        $location .= $url;
+    }
 
     $msg .= "\n$location" if length $location;
 
