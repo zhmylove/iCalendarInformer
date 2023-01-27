@@ -1,0 +1,14 @@
+[Unit]
+Description=iCalendar informer bot
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+ExecStart=/.../listener.pl
+Restart=on-failure
+RestartSec=1s
+User=...
+Group=...
+
+[Install]
+WantedBy=multi-user.target

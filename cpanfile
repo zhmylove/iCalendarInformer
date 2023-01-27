@@ -1,0 +1,11 @@
+recommends "Mojo::UserAgent";
+requires "AnyEvent";
+requires "AnyEvent::Subprocess::Easy";
+requires "Data::Dumper";
+requires "Data::ICal::DateTime";
+requires "DateTime";
+requires "Encode";
+requires "Getopt::Long";
+requires "LWP";
+requires "Storable";
+requires "WWW::Telegram::BotAPI";
