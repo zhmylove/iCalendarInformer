@@ -1,0 +1,14 @@
+[Unit]
+Description=ICalendar informer bot
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+ExecStart=/home/korg/ical_informer/run_wrapper.sh ./listener.pl
+Restart=on-failure
+RestartSec=1s
+User=korg
+Group=korg
+
+[Install]
+WantedBy=multi-user.target
