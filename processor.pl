@@ -31,8 +31,9 @@ sub parse_ics_file {
             $cal_new = Data::ICal->new(data => join "", <STDIN>);
         } elsif ($FILENAME =~ m,^https?://\S+$,s) {
             my $response;
-            eval { $response = LWP::UserAgent->new->get($FILENAME)->content };
-            die $@ unless $response;
+            eval { $response = LWP::UserAgent->new->get($FILENAME)->content; 1} or do {
+                die "LWP error: $@ : $!";
+            };
             $cal_new = Data::ICal->new(data => $response);
         } else {
             $cal_new = Data::ICal->new(filename => $FILENAME);
@@ -50,7 +51,7 @@ sub parse_ics_file {
 # Create DateTime span object
 sub get_span {
     my $delta = shift // 0;
-    my $s = DateTime->from_epoch(epoch => time + $delta)->truncate(to => 'day');
+    my $s = DateTime->from_epoch(epoch => time + $delta)->set_time_zone($TIMEZONE)->truncate(to => 'day');
     my $e = $s->clone->add(days => 1)->subtract(seconds => 1);
     DateTime::Span->from_datetimes(start => $s, end => $e);
 }
@@ -65,21 +66,20 @@ sub zoom_url {
 # Format an event
 sub format_event {
     my $e = shift // $_;
-    my $msg = sprintf "<b>%s:</b> <code>%s</code>", $e->{time}, $e->{summary};
+    my @msg;
+    push @msg, sprintf "<b>%s:</b> <code>%s</code>", $e->{time}, $e->{summary};
 
-    my $location = "";
-    $location .= "<b>Location:</b> $e->{location} " if length $e->{location};
+    push @msg, "<b>Location:</b> $e->{location} " if length $e->{location};
+
     if (length($e->{url})) {
         my $url = $e->{url};
         $url = zoom_url($1, $e->{url}) if $url =~ m/\/(\d{7,})(?:\?|$)/s;
-        $location .= $url;
+        push @msg, $url if $url;
     }
 
-    $msg .= "\n$location" if length $location;
+    push @msg, "<b>Password:</b> $e->{password} " if length $e->{password};
 
-    $msg .= "\n<b>Password:</b> $e->{password} " if length $e->{password};
-
-    return "$msg\n";
+    return join "\n", @msg, "";
 }
 
 # Format events for cerain day
