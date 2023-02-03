@@ -31,7 +31,15 @@ sub parse_ics_file {
             $cal_new = Data::ICal->new(data => join "", <STDIN>);
         } elsif ($FILENAME =~ m,^https?://\S+$,s) {
             my $response;
-            eval { $response = LWP::UserAgent->new->get($FILENAME)->content; 1} or do {
+            my $tries = 5;
+            eval {
+                while (not defined $response and --$tries > 0) {
+                    my $res = LWP::UserAgent->new->get($FILENAME);
+                    $response = $res->content unless $res->code >= 300;
+                    sleep 3 + 3 * rand() unless defined $response;
+                }
+                1;
+            } or do {
                 die "LWP error: $@ : $!";
             };
             $cal_new = Data::ICal->new(data => $response);
