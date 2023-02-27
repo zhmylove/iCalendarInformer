@@ -28,7 +28,10 @@ sub parse_ics_file {
         local *STDERR;
         open STDERR, ">", \$@;
         if ($FILENAME eq "-") {
-            $cal_new = Data::ICal->new(data => join "", <STDIN>);
+            my $data = join "", <STDIN>;
+            # Dirty hack to process Europe/Moscow timezone
+            $data =~ s/(?<=UNTIL=)(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/DateTime->new(year => $1, month => $2, day => $3, hour => $4, minute => $5, second => $6, time_zone => "UTC")->add(hours => 3)->strftime("%Y%m%dT%H%M%SZ")/esg;
+            $cal_new = Data::ICal->new(data => $data);
         } elsif ($FILENAME =~ m,^https?://\S+$,s) {
             my $response;
             my $tries = 5;
@@ -42,6 +45,8 @@ sub parse_ics_file {
             } or do {
                 die "LWP error: $@ : $!";
             };
+            # Dirty hack to process Europe/Moscow timezone
+            $response =~ s/(?<=UNTIL=)(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z/DateTime->new(year => $1, month => $2, day => $3, hour => $4, minute => $5, second => $6, time_zone => "UTC")->add(hours => 3)->strftime("%Y%m%dT%H%M%SZ")/esg;
             $cal_new = Data::ICal->new(data => $response);
         } else {
             $cal_new = Data::ICal->new(filename => $FILENAME);
