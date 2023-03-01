@@ -76,6 +76,12 @@ sub zoom_url {
     "<b>Zoom:</b> <a href=\"$href\">$text</a>";
 }
 
+# Format vmost url
+sub vmost_url {
+    my ($text, $href) = @_;
+    "<b>VideoMost:</b> <a href=\"$href\">$text</a>";
+}
+
 # Format an event
 sub format_event {
     my $e = shift // $_;
@@ -86,7 +92,8 @@ sub format_event {
 
     if (length($e->{url})) {
         my $url = $e->{url};
-        $url = zoom_url($1, $e->{url}) if $url =~ m/\/(\d{7,})(?:\?|$)/s;
+        $url = zoom_url($1, $e->{url}) if $url =~ m@/(\d{7,})(?:\?|$)@s;
+        $url = vmost_url($1, $e->{url}) if $url =~ m@confid=(\d{2,})@s;
         push @msg, $url if $url;
     }
 
@@ -129,11 +136,11 @@ sub events {
             $url = $1;
         } else {
             # Otherwise try to extract URL from description, but only with zoom domain
-            $url = $1 if $description =~ m@(https?://\S+zoom\S+)@s;
+            $url = $1 if $description =~ m@(https?://(?:vmost|\S+zoom)[^<]+)@s;
         }
         $location =~ s/^[.,;:\s]*//; $location =~ s/[.,;:\s]*$//;
 
-        # Try to extract passcode from description if url contains ?pwd=
+        # Try to extract passcode from description if url contains ?pwd= (zoom)
         if ($url =~ m@(\d+)\?pwd=@) {
             my $mid = $1;
             $mid = join "\\s?", split "", $mid;
@@ -141,6 +148,11 @@ sub events {
             $mid .= "[^:]*?: (\\S+)";
 
             $password = $1 if $description =~ m@$mid@s;
+        }
+
+        # Try to extract passcode from description if url contains confpass= (videomost)
+        if ($url =~ m@confpass=([^&]+?)$@m) {
+            $password = $1;
         }
 
         $e->{location} = html_escape($location);
