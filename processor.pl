@@ -82,6 +82,12 @@ sub vmost_url {
     "<b>VideoMost:</b> <a href=\"$href\">$text</a>";
 }
 
+# Format jazz url
+sub jazz_url {
+    my ($text, $href) = @_;
+    "<b>Jazz:</b> <a href=\"$href\">$text</a>";
+}
+
 # Format an event
 sub format_event {
     my $e = shift // $_;
@@ -94,6 +100,7 @@ sub format_event {
         my $url = $e->{url};
         $url = zoom_url($1, $e->{url}) if $url =~ m@/(\d{7,})(?:\?|$)@s;
         $url = vmost_url($1, $e->{url}) if $url =~ m@confid=(\d{2,})@s;
+        $url = jazz_url($1, $e->{url}) if $url =~ m@jazz.sber.ru/([^\@?\n]+)@s;
         push @msg, $url if $url;
     }
 
@@ -136,7 +143,7 @@ sub events {
             $url = $1;
         } else {
             # Otherwise try to extract URL from description, but only with zoom domain
-            $url = $1 if $description =~ m@(https?://(?:vmost|\S+zoom)[^<]+)@s;
+            $url = $1 if $description =~ m@(https?://(?:jazz|vmost|\S+zoom)[^<\s]+)@s;
         }
         $location =~ s/^[.,;:\s]*//; $location =~ s/[.,;:\s]*$//;
 
@@ -153,6 +160,16 @@ sub events {
         # Try to extract passcode from description if url contains confpass= (videomost)
         if ($url =~ m@confpass=([^&]+?)$@m) {
             $password = $1;
+        }
+
+        # Try to extract passcode from description if url contains ?psw= (jazz)
+        if ($url =~ m@([^/]+)\?psw=@) {
+            $description =~ s/<mailto:[^>]+>//g;
+            my $mid = $1;
+            $mid = ":\\s+$mid";
+            $mid .= "[^:]*?: (\\S+)";
+
+            $password = $1 if $description =~ m@$mid@s;
         }
 
         $e->{location} = html_escape($location);
