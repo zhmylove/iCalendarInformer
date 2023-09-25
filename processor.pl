@@ -8,6 +8,7 @@ use DateTime;
 use Encode qw( decode_utf8 );
 use Getopt::Long;
 use LWP;
+use Time::Piece;
 use WWW::Telegram::BotAPI;
 
 # syncevolution --export - backend=evolution-calendar > cal.ics
@@ -16,9 +17,11 @@ use WWW::Telegram::BotAPI;
 # Default values go here
 my $FILENAME = "cal.ics";
 my $DAY = "";
+my $DATE;
 my $CHATID;
 my $TOKEN;
 my $TIMEZONE = "Europe/Moscow";
+my $ALWAYS_NOTIFY;
 
 # ICS parser
 my $cal;
@@ -64,7 +67,9 @@ sub parse_ics_file {
 # Create DateTime span object
 sub get_span {
     my $delta = shift // 0;
-    my $s = DateTime->from_epoch(epoch => time + $delta)->set_time_zone($TIMEZONE)->truncate(to => 'day');
+    my $epoch = time + $delta;
+    $epoch = Time::Piece->strptime($DATE => "%F")->epoch if $DATE;
+    my $s = DateTime->from_epoch(epoch => $epoch)->set_time_zone($TIMEZONE)->truncate(to => 'day');
     my $e = $s->clone->add(days => 1)->subtract(seconds => 1);
     DateTime::Span->from_datetimes(start => $s, end => $e);
 }
@@ -215,17 +220,37 @@ sub notify {
 
 # Handlers for -day option
 my %day_handlers = (
+    date => sub {
+        my $events = format_day();
+        if ($events) {
+            notify("<b>On $DATE:</b>\n\n$events");
+        } elsif ($ALWAYS_NOTIFY) {
+            notify("<b>Nothing \x{1F9D9}</b>\n\n$events");
+        }
+    },
     today => sub {
         my $events = format_day();
-        notify("<b>Today:</b>\n\n$events") if $events;
+        if ($events) {
+            notify("<b>Today:</b>\n\n$events");
+        } elsif ($ALWAYS_NOTIFY) {
+            notify("<b>Nothing \x{1F9D9}</b>\n\n$events");
+        }
     },
     tomorrow => sub {
         my $events = format_day(1 * 24 * 3600);
-        notify("<b>Tomorrow:</b>\n\n$events") if $events;
+        if ($events) {
+            notify("<b>Tomorrow:</b>\n\n$events");
+        } elsif ($ALWAYS_NOTIFY) {
+            notify("<b>Nothing \x{1F9D9}</b>\n\n$events");
+        }
     },
     monday => sub {
         my $events = format_day(3 * 24 * 3600);
-        notify("<b>Monday:</b>\n\n$events") if $events;
+        if ($events) {
+            notify("<b>Monday:</b>\n\n$events");
+        } elsif ($ALWAYS_NOTIFY) {
+            notify("<b>Nothing \x{1F9D9}</b>\n\n$events");
+        }
     },
     next => sub {
         my $events = format_minutes(8 * 60);
@@ -239,8 +264,10 @@ my %day_handlers = (
 
 # Get options
 GetOptions(
+    "always" => \$ALWAYS_NOTIFY,
     "chatid=s" => \$CHATID,
     "day=s" => \$DAY,
+    "date=s" => \$DATE,
     "file=s" => \$FILENAME,
     "timezone=s" => \$TIMEZONE,
     "token=s" => \$TOKEN,
@@ -250,6 +277,7 @@ GetOptions(
 die "Unknown options specified: @ARGV" if @ARGV;
 $DAY = lc($DAY);
 die "Invalid value for Day" if $DAY and not defined $day_handlers{$DAY};
+die "Date is not specified" if $DAY eq "date" and not defined $DATE;
 die "ChatID cannot be empty" unless $CHATID;
 die "Token cannot be empty" unless $TOKEN;
 

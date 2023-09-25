@@ -71,7 +71,17 @@ for(;;) {
             die "Fork error" unless defined($pid = fork());
             next if $pid;
 
-            exec { "./runner.pl" } "./runner.pl", -uid => $upd->{message}{chat}{id}, "--", -day => $mode;
+            exec { "./runner.pl" } "./runner.pl", -uid => $upd->{message}{chat}{id}, "--", -day => $mode, -always;
+            die "Exec error";
+        }
+
+        if ($text =~ m,^/da(?:te|y)\s*(\d{4}-\d{2}-\d{2})$,s) {
+            my $date = $1;
+            my $pid;
+            die "Fork error" unless defined($pid = fork());
+            next if $pid;
+
+            exec { "./runner.pl" } "./runner.pl", -uid => $upd->{message}{chat}{id}, "--", -day => "date", -always, -date => $date;
             die "Exec error";
         }
 
