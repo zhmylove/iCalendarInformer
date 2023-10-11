@@ -9,6 +9,7 @@ use Encode qw( decode_utf8 );
 use Getopt::Long;
 use LWP;
 use Time::Piece;
+use List::Util qw( any );
 use WWW::Telegram::BotAPI;
 
 # syncevolution --export - backend=evolution-calendar > cal.ics
@@ -24,6 +25,7 @@ my $TIMEZONE = "Europe/Moscow";
 my $ALWAYS_NOTIFY;
 
 # ICS parser
+my $now = DateTime->now();
 my $cal;
 sub parse_ics_file {
     my $cal_new;
@@ -221,6 +223,7 @@ sub notify {
 # Handlers for -day option
 my %day_handlers = (
     date => sub {
+        parse_ics_file();
         my $events = format_day();
         if ($events) {
             notify("<b>On $DATE:</b>\n\n$events");
@@ -229,6 +232,7 @@ my %day_handlers = (
         }
     },
     today => sub {
+        parse_ics_file();
         my $events = format_day();
         if ($events) {
             notify("<b>Today:</b>\n\n$events");
@@ -237,6 +241,7 @@ my %day_handlers = (
         }
     },
     tomorrow => sub {
+        parse_ics_file();
         my $events = format_day(1 * 24 * 3600);
         if ($events) {
             notify("<b>Tomorrow:</b>\n\n$events");
@@ -245,6 +250,7 @@ my %day_handlers = (
         }
     },
     monday => sub {
+        parse_ics_file();
         my $events = format_day(3 * 24 * 3600);
         if ($events) {
             notify("<b>Monday:</b>\n\n$events");
@@ -253,6 +259,7 @@ my %day_handlers = (
         }
     },
     next => sub {
+        parse_ics_file();
         my $events = format_minutes(8 * 60);
         if ($events) {
             notify("<b>Events in next 8 hours:</b>\n\n$events");
@@ -281,14 +288,14 @@ die "Date is not specified" if $DAY eq "date" and not defined $DATE;
 die "ChatID cannot be empty" unless $CHATID;
 die "Token cannot be empty" unless $TOKEN;
 
-# Parse the file
-parse_ics_file();
-
 # Execute -day handlers, if any
 if ($DAY) {
     $day_handlers{$DAY}->();
     exit 0;
 }
+
+# Parse the file
+parse_ics_file();
 
 # By default notify for any soon events
 my $events = format_minutes(2);
