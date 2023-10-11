@@ -102,6 +102,12 @@ sub jazz_url {
     "<b>Jazz:</b> <a href=\"$href\">$text</a>";
 }
 
+# Format webinar url
+sub webinar_url {
+    my ($text, $href) = @_;
+    "<b>Webinar:</b> <a href=\"$href\">$text</a>";
+}
+
 # Format an event
 sub format_event {
     my $e = shift // $_;
@@ -116,6 +122,7 @@ sub format_event {
         $url = talk_url($1, $e->{url}) if $url =~ m@/talk.*?(\d{7,})(?:\?|$)@s;
         $url = vmost_url($1, $e->{url}) if $url =~ m@confid=(\d{2,})@s;
         $url = jazz_url($1, $e->{url}) if $url =~ m@jazz.sber.ru/([^\@?\n]+)@s;
+        $url = webinar_url($1, $e->{url}) if $url =~ m@events.webinar.ru/([^\@?\n]+)@s;
         push @msg, $url if $url;
     }
 
@@ -158,7 +165,7 @@ sub events {
             $url = $1;
         } else {
             # Otherwise try to extract URL from description, but only with zoom domain
-            $url = $1 if $description =~ m@(https?://(?:jazz|vmost|\S+zoom|talk)[^<\s]+)@s;
+            $url = $1 if $description =~ m@(https?://(?:jazz|vmost|\S+zoom|talk|events.webinar.ru)[^<\s>]+)@s;
         }
         $location =~ s/^[.,;:\s]*//; $location =~ s/[.,;:\s]*$//;
 
