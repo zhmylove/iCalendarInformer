@@ -148,6 +148,7 @@ sub html_escape {
 
 # Extract useful events info from calendar
 sub events {
+    my %seen; # to remove duplicates by UID
     map {
         my ($evt, $e) = $_;
 
@@ -199,7 +200,8 @@ sub events {
         $e->{password} = $password;
 
         $e;
-    } sort { DateTime->compare(map { $_->start } ($a, $b)) } $cal->events(get_span(@_), 'day');
+    } map { my $uid = $_->uid; defined $uid ? ( $seen{$uid}++ ? () : $_ ) : $_ }
+    sort { DateTime->compare(map { $_->start } ($a, $b)) } $cal->events(get_span(@_), 'day');
 }
 
 # Find events in next X minutes
