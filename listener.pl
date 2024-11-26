@@ -76,14 +76,20 @@ for(;;) {
             die "Exec error";
         }
 
-        if ($text =~ m,^/da(?:te|y)\s*(\d{4}-\d{2}-\d{2})$,s) {
-            my $date = $1;
+        if ($text =~ m<^/da(?:te|y)\s*(?:(\d{4})-)?(?:(\d{1,2})-)?(\d{1,2})\s*$>s) {
+            my $year = $1;
+            my $month = $2;
+            my $day = $3;
+
             my $pid;
             die "Fork error" unless defined($pid = fork());
             next if $pid;
 
+            $year //= (localtime)[5] + 1900;
+            $month //= sprintf "%02d", 1 + (localtime)[4];
+
             exec { "./runner.pl" } "./runner.pl", -uid => $upd->{message}{chat}{id}, "--", -day => "date", -always,
-                -date => $date;
+                -date => "$year-$month-$day";
             die "Exec error";
         }
 
