@@ -168,7 +168,7 @@ sub events {
             # Otherwise try to extract URL from description, but only with zoom domain
             $url = $1 if $description =~ m@(https?://(?:jazz|vmost|\S+zoom|talk|events.webinar.ru)[^<\s>]+)@s;
         }
-        $location =~ s/^[.,;:\s]*//; $location =~ s/[.,;:\s]*$//;
+        $location =~ s/^[.,;:\s]*//; $location =~ s/[.,;:\s-]*$//;
 
         # Try to extract passcode from description if url contains ?pwd= (zoom)
         if ($url =~ m@(\d+)\?pwd=@) {
@@ -194,6 +194,8 @@ sub events {
 
             $password = $1 if $description =~ m@$mid@s;
         }
+
+        $url =~ s/[;\s]*$//;
 
         $e->{location} = html_escape($location);
         $e->{url} = html_escape($url);
