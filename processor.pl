@@ -3,6 +3,7 @@
 
 use strict;
 use warnings;
+use utf8;
 use Data::ICal::DateTime;
 use DateTime;
 use Encode qw( decode_utf8 );
@@ -23,6 +24,7 @@ my $CHATID;
 my $TOKEN;
 my $TIMEZONE = "Europe/Moscow";
 my $ALWAYS_NOTIFY;
+my $SKIP_CANCELED;
 
 # ICS parser
 my $now = DateTime->now();
@@ -148,11 +150,12 @@ sub html_escape {
 
 # Extract useful events info from calendar
 sub events {
+    # Ugly legacy code, sorry ;-(
     my %seen; # to remove duplicates by UID
     map {
         my ($evt, $e) = $_;
 
-        $e->{summary} = html_escape(decode_utf8($evt->summary));
+        $e->{summary} = $evt->{summary};
         $e->{time} = join " -- ", map { sprintf("%02d:%02d", $evt->$_->hour, $evt->$_->minute) } qw( start end );
         $e->{start} = $evt->start;
 
@@ -202,6 +205,13 @@ sub events {
         $e->{password} = $password;
 
         $e;
+    } map {
+        ## This map only skips caneled events if $SKIP_CANCELED and saves decoded summary inside blessed hashes
+        # sub events() is injected in Data::ICal::DateTime and is not writeable
+        # Data::ICal object itself based on a Class::Accessor and thus is a {}, so we can pass new value in it
+        my $summary = html_escape(decode_utf8($_->summary));
+        $_->{summary} = $summary;
+        $SKIP_CANCELED ? $summary =~ m,^(?:Canceled|Отменено):,si ? () : $_ : $_;
     } map { my $uid = $_->uid; defined $uid ? ( $seen{$uid}++ ? () : $_ ) : $_ }
     sort { DateTime->compare(map { $_->start } ($a, $b)) } $cal->events(get_span(@_), 'day');
 }
@@ -283,6 +293,7 @@ my %day_handlers = (
 # Get options
 GetOptions(
     "always" => \$ALWAYS_NOTIFY,
+    "skip-canceled" => \$SKIP_CANCELED,
     "chatid=s" => \$CHATID,
     "day=s" => \$DAY,
     "date=s" => \$DATE,

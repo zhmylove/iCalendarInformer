@@ -109,7 +109,7 @@ for(;;) {
             next;
         }
 
-        if ($text =~ m,/ics (https?://\S+)$,s) {
+        if ($text =~ m,^\s*/ics (https?://\S+)$,s) {
             my $url = $1;
 
             unless ($url =~ m,\.ics$,) {
@@ -121,6 +121,20 @@ for(;;) {
             $config->{offset} = $offset;
             save_config();
             sendMessage($upd->{message}{chat}{id}, "ICS enabled successfully");
+            next;
+        }
+
+        if ($text =~ m,^\s*/cancell?ed(?:\s+(?:enabled?|on|yes))?\s*$,si) {
+            delete $config->{peruser}->{ $upd->{message}{chat}{id} }->{"skip-canceled"};
+            save_config();
+            sendMessage($upd->{message}{chat}{id}, "You will receive canceled events again");
+            next;
+        }
+
+        if ($text =~ m,^\s*/cancell?ed\s+(?:disabled?|off|no)\s*$,si) {
+            $config->{peruser}->{ $upd->{message}{chat}{id} }->{"skip-canceled"} = 1;
+            save_config();
+            sendMessage($upd->{message}{chat}{id}, "You won't receive canceled events");
             next;
         }
     }

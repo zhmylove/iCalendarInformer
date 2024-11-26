@@ -32,6 +32,7 @@ push @jobs, qx_nonblock(
     -file => $config->{ics}->{$_},
     -chatid => $_,
     -token => $config->{token},
+    ($config->{peruser}->{$_}->{"skip-canceled"} ? "-skip-canceled" : ()),
     @ARGV,
 ) for @uids;
 
