@@ -61,7 +61,8 @@ for(;;) {
         $text =~ s/\s*$//;
 
         if ($text eq "/help") {
-            sendMessage($upd->{message}{chat}{id}, "Outlook calendar notifications bot");
+            sendMessage($upd->{message}{chat}{id}, "Outlook calendar notifications bot. " .
+                "See README: https://github.com/zhmylove/iCalendarInformer");
             next;
         }
 
@@ -81,14 +82,16 @@ for(;;) {
             die "Fork error" unless defined($pid = fork());
             next if $pid;
 
-            exec { "./runner.pl" } "./runner.pl", -uid => $upd->{message}{chat}{id}, "--", -day => "date", -always, -date => $date;
+            exec { "./runner.pl" } "./runner.pl", -uid => $upd->{message}{chat}{id}, "--", -day => "date", -always,
+                -date => $date;
             die "Exec error";
         }
 
         if ($text eq "/ics") {
             $config->{offset} = $offset;
             save_config();
-            sendMessage($upd->{message}{chat}{id}, 'Proper command format: `/ics disable` or `/ics https://URL-for-calendar.ics`');
+            sendMessage($upd->{message}{chat}{id},
+                'Proper command format: `/ics disable` or `/ics https://URL-for-calendar.ics`');
             next;
         }
 
