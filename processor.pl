@@ -163,7 +163,7 @@ sub events {
         my $password = "";
         my $location = $evt->property('location');
         $location = defined $location ? decode_utf8($location->[0]->decoded_value) : "";
-        my $description = decode_utf8($evt->description);
+        my $description = decode_utf8($evt->description) // '';
         if ($location =~ s@(https?://\S+)@@) {
             # If there is a URL in location, use it
             $url = $1;
