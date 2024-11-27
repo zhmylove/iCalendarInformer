@@ -61,8 +61,17 @@ for(;;) {
         $text =~ s/\s*$//;
 
         if ($text eq "/help") {
-            sendMessage($upd->{message}{chat}{id}, "Outlook calendar notifications bot. " .
-                "See README: https://github.com/zhmylove/iCalendarInformer");
+            sendMessage($upd->{message}{chat}{id}, join "\n",
+                "Outlook calendar notifications bot.",
+                "README: https://github.com/zhmylove/iCalendarInformer",
+                '`/help` -- show this message',
+                '`/today` -- show events for today',
+                '`/tomorrow` -- show events for tomorrow',
+                '`/next` -- show events in next 8 hours',
+                '`/date [[YYYY-]MM-]DD` -- show events for specific date, YYYY and MM defaults to current date',
+                '`/ics [disable|URL]` -- set or reset ICS URL for the bot',
+                '`/canceled [on|off]` -- enable or disable display of canceled messages, show (on) by default',
+            );
             next;
         }
 
