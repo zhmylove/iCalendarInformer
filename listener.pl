@@ -31,8 +31,9 @@ die "I am not a bot" unless $tg->getMe->{result}{is_bot};
 sub sendMessage {
     my $chat_id = shift;
     my $text = shift;
+    my %opts = @_;
 
-    eval { $tg->sendMessage({ chat_id => $chat_id, text => $text }); 1 } or do {
+    eval { $tg->sendMessage({ chat_id => $chat_id, text => $text, %opts }); 1 } or do {
         warn "Error sending message [ $chat_id => $text ]" if $ENV{DEBUG};
     };
 }
@@ -61,16 +62,17 @@ for(;;) {
         $text =~ s/\s*$//;
 
         if ($text eq "/help") {
-            sendMessage($upd->{message}{chat}{id}, join "\n",
-                "Outlook calendar notifications bot.",
-                "README: https://github.com/zhmylove/iCalendarInformer",
-                '`/help` -- show this message',
-                '`/today` -- show events for today',
-                '`/tomorrow` -- show events for tomorrow',
-                '`/next` -- show events in next 8 hours',
-                '`/date [[YYYY-]MM-]DD` -- show events for specific date, YYYY and MM defaults to current date',
-                '`/ics [disable|URL]` -- set or reset ICS URL for the bot',
-                '`/canceled [on|off]` -- enable or disable display of canceled messages, show (on) by default',
+            sendMessage($upd->{message}{chat}{id}, join("\n",
+                'Outlook calendar notifications bot\.',
+                "README: [link](https://github.com/zhmylove/iCalendarInformer)",
+                '`/help` \-\- show this message',
+                '`/today` \-\- show events for today',
+                '`/tomorrow` \-\- show events for tomorrow',
+                '`/next` \-\- show events in next 8 hours',
+                '`/date [[YYYY-]MM-]DD` \-\- show events for specific date, YYYY and MM defaults to current date',
+                '`/ics [disable|URL]` \-\- set or reset ICS URL for the bot',
+                '`/canceled [on|off]` \-\- enable or disable display of canceled messages, show \(on\) by default'),
+                parse_mode => "MarkdownV2",
             );
             next;
         }
